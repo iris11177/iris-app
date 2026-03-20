@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 const DESTINATIONS = {
   tokyo: {
@@ -10,18 +10,6 @@ const DESTINATIONS = {
       { name: "Ueno", reason: "great value, easy train access" },
       { name: "Asakusa", reason: "traditional vibe, budget-friendly" },
       { name: "Shinjuku", reason: "nightlife, shopping, major transport hub" },
-    ],
-    highlights: [
-      "Asakusa & Senso-ji",
-      "Ueno Park",
-      "Shibuya Crossing",
-      "Meiji Shrine",
-      "Shinjuku",
-      "Tokyo Skytree",
-      "Akihabara",
-      "Tsukiji area",
-      "Harajuku",
-      "Odaiba",
     ],
     food: ["ramen", "sushi", "gyudon", "convenience store snacks"],
     transportTips: [
@@ -40,18 +28,6 @@ const DESTINATIONS = {
       { name: "Taipei Main Station", reason: "best transport access" },
       { name: "Zhongshan", reason: "cafes, shopping, stylish stay" },
     ],
-    highlights: [
-      "Taipei 101",
-      "Ximending",
-      "Chiang Kai-shek Memorial Hall",
-      "Jiufen",
-      "Shifen",
-      "Yehliu",
-      "Raohe Night Market",
-      "Beitou",
-      "Longshan Temple",
-      "Elephant Mountain",
-    ],
     food: ["beef noodles", "xiao long bao", "fried chicken", "night market snacks"],
     transportTips: [
       "Use EasyCard for MRT and buses",
@@ -68,18 +44,6 @@ const DESTINATIONS = {
       { name: "CBD", reason: "central, walkable, transport access" },
       { name: "Haymarket", reason: "good value, near food and Central" },
       { name: "Surry Hills", reason: "cafes, local vibe, still accessible" },
-    ],
-    highlights: [
-      "Circular Quay",
-      "Sydney Opera House",
-      "The Rocks",
-      "Darling Harbour",
-      "Bondi Beach",
-      "Taronga Zoo",
-      "Blue Mountains",
-      "Queen Victoria Building",
-      "Hyde Park",
-      "Manly",
     ],
     food: ["fish and chips", "brunch", "meat pie", "Asian food in Haymarket"],
     transportTips: [
@@ -98,18 +62,6 @@ const DESTINATIONS = {
       { name: "Hoan Kiem", reason: "central and scenic" },
       { name: "French Quarter", reason: "cleaner, quieter, upscale feel" },
     ],
-    highlights: [
-      "Hoan Kiem Lake",
-      "Old Quarter",
-      "Train Street",
-      "Temple of Literature",
-      "Hoa Lo Prison",
-      "Ninh Binh",
-      "Ha Long Bay",
-      "St. Joseph Cathedral",
-      "Dong Xuan Market",
-      "West Lake",
-    ],
     food: ["pho", "bun cha", "egg coffee", "banh mi"],
     transportTips: [
       "Use Grab for easier city transfers",
@@ -127,121 +79,12 @@ function formatCurrency(value) {
   }).format(value || 0);
 }
 
-function formatDateLabel(dateString) {
-  if (!dateString) return "";
-  const d = new Date(dateString);
-  return d.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    weekday: "short",
-  });
-}
-
 function nightsBetween(arrival, departure) {
   if (!arrival || !departure) return 0;
   const a = new Date(arrival);
   const d = new Date(departure);
   const diff = Math.round((d - a) / (1000 * 60 * 60 * 24));
   return diff > 0 ? diff : 0;
-}
-
-function getDatesBetween(arrival, departure) {
-  const dates = [];
-  const start = new Date(arrival);
-  const end = new Date(departure);
-
-  if (!(start instanceof Date) || isNaN(start)) return dates;
-  if (!(end instanceof Date) || isNaN(end)) return dates;
-
-  let current = new Date(start);
-  while (current < end) {
-    dates.push(new Date(current));
-    current.setDate(current.getDate() + 1);
-  }
-  return dates;
-}
-
-function buildTripPlan({
-  destinationKey,
-  arrival,
-  departure,
-  travelers,
-  budgetLevel,
-  pace,
-}) {
-  const destination = DESTINATIONS[destinationKey];
-  const tripDates = getDatesBetween(arrival, departure);
-  const days = tripDates.length;
-
-  if (!destination || days <= 0) return [];
-
-  const highlights = destination.highlights;
-  const hotelArea =
-    pace === "relaxed"
-      ? destination.hotelAreas[0]
-      : pace === "balanced"
-      ? destination.hotelAreas[1] || destination.hotelAreas[0]
-      : destination.hotelAreas[2] || destination.hotelAreas[0];
-
-  const plan = [];
-
-  for (let i = 0; i < days; i++) {
-    const dayNumber = i + 1;
-    const isArrivalDay = i === 0;
-    const isDepartureDay = i === days - 1;
-    const dateLabel = formatDateLabel(tripDates[i]);
-
-    if (isArrivalDay) {
-      plan.push({
-        day: dayNumber,
-        dateLabel,
-        title: "Arrival + Easy Start",
-        morning: `Arrival at ${destination.airport}. Immigration, baggage claim, airport transfer, and check-in near ${hotelArea.name}.`,
-        afternoon: `Light exploration around ${hotelArea.name}. Start with ${highlights[0]} if energy allows.`,
-        evening: `Simple dinner and early rest. Try local ${destination.food[0]} or ${destination.food[1]}.`,
-        note: `Keep this day flexible, especially if flight arrives late.`,
-      });
-      continue;
-    }
-
-    if (isDepartureDay) {
-      plan.push({
-        day: dayNumber,
-        dateLabel,
-        title: "Departure Day",
-        morning: `Breakfast, final packing, and last short walk or coffee near ${hotelArea.name}.`,
-        afternoon: `Check out, airport transfer, and allowance for baggage and immigration.`,
-        evening: `Departure flight.`,
-        note: `Do not schedule far attractions on departure day.`,
-      });
-      continue;
-    }
-
-    const morningSpot = highlights[(i * 2 - 1) % highlights.length];
-    const afternoonSpot = highlights[(i * 2) % highlights.length];
-    const eveningFood = destination.food[i % destination.food.length];
-
-    let title = "City Exploration Day";
-    if (pace === "fast") title = "Packed Sightseeing Day";
-    if (pace === "relaxed") title = "Relaxed Exploration Day";
-
-    plan.push({
-      day: dayNumber,
-      dateLabel,
-      title,
-      morning: `Visit ${morningSpot}. Best to start early to avoid crowds and use the cooler part of the day well.`,
-      afternoon: `Continue to ${afternoonSpot}. Add nearby shopping, cafes, or photo stops on the way.`,
-      evening: `Dinner focus: try ${eveningFood}. Return to ${hotelArea.name} or enjoy a nearby night market / nightlife area.`,
-      note:
-        pace === "relaxed"
-          ? `Keep extra rest time and cafe breaks.`
-          : pace === "fast"
-          ? `Use efficient routing and avoid going back and forth across the city.`
-          : `Good balance between major attractions and rest time.`,
-    });
-  }
-
-  return { plan, hotelArea };
 }
 
 export default function Home() {
@@ -252,21 +95,11 @@ export default function Home() {
   const [budgetLevel, setBudgetLevel] = useState("mid");
   const [pace, setPace] = useState("balanced");
   const [generated, setGenerated] = useState(false);
+  const [aiResult, setAiResult] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const destination = DESTINATIONS[destinationKey];
   const nights = nightsBetween(arrival, departure);
-
-  const tripData = useMemo(() => {
-    if (!generated) return null;
-    return buildTripPlan({
-      destinationKey,
-      arrival,
-      departure,
-      travelers: Number(travelers || 1),
-      budgetLevel,
-      pace,
-    });
-  }, [generated, destinationKey, arrival, departure, travelers, budgetLevel, pace]);
 
   const estimatedHotelPerNight =
     budgetLevel === "budget"
@@ -288,19 +121,60 @@ export default function Home() {
     destination.country
   )}`;
 
-  const generatePlan = () => {
+  const generatePlan = async () => {
     if (!arrival || !departure) {
-      alert("Please select arrival and departure dates.");
+      alert("Please select dates");
       return;
     }
 
-    const totalNights = nightsBetween(arrival, departure);
-    if (totalNights <= 0) {
+    if (nights <= 0) {
       alert("Departure date must be after arrival date.");
       return;
     }
 
-    setGenerated(true);
+    setLoading(true);
+    setGenerated(false);
+    setAiResult("");
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          destination: destination.label,
+          arrival,
+          departure,
+          travelers,
+          budget: budgetLevel,
+          pace,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Failed to generate itinerary");
+      }
+
+      setAiResult(data.result || "No itinerary returned.");
+      setGenerated(true);
+    } catch (err) {
+      alert("Failed to generate itinerary");
+    }
+
+    setLoading(false);
+  };
+
+  const copyAiItinerary = async () => {
+    if (!aiResult) return;
+    try {
+      await navigator.clipboard.writeText(aiResult);
+      alert("Itinerary copied!");
+    } catch {
+      alert("Failed to copy itinerary");
+    }
   };
 
   return (
@@ -457,255 +331,180 @@ export default function Home() {
 
             <div style={{ gridColumn: "span 6" }}>
               <button onClick={generatePlan} style={buttonStyle}>
-                Generate Real Itinerary
+                {loading ? "Generating..." : "Generate Real Itinerary"}
               </button>
             </div>
           </div>
 
-          {generated && tripData && (
-            <>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1.4fr 0.9fr",
-                  gap: 18,
-                  marginTop: 26,
-                }}
-              >
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 22,
-                    padding: 22,
-                  }}
-                >
-                  <h2 style={sectionTitle}>Trip Overview</h2>
-                  <div style={{ color: "#334155", lineHeight: 1.8, fontSize: 16 }}>
-                    <div>
-                      <strong>Destination:</strong> {destination.label}
-                    </div>
-                    <div>
-                      <strong>Airport:</strong> {destination.airport}
-                    </div>
-                    <div>
-                      <strong>Recommended stay area:</strong> {tripData.hotelArea.name} —{" "}
-                      {tripData.hotelArea.reason}
-                    </div>
-                    <div>
-                      <strong>Travel style:</strong> {pace} / {budgetLevel}
-                    </div>
-                    <div>
-                      <strong>Suggested food focus:</strong> {destination.food.join(", ")}
-                    </div>
-                  </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1.4fr 0.9fr",
+              gap: 18,
+              marginTop: 26,
+            }}
+          >
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e5e7eb",
+                borderRadius: 22,
+                padding: 22,
+              }}
+            >
+              <h2 style={sectionTitle}>Trip Overview</h2>
+              <div style={{ color: "#334155", lineHeight: 1.8, fontSize: 16 }}>
+                <div>
+                  <strong>Destination:</strong> {destination.label}
                 </div>
-
-                <div
-                  style={{
-                    background: "#f8fafc",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 22,
-                    padding: 22,
-                  }}
-                >
-                  <h2 style={sectionTitle}>Estimated Budget</h2>
-                  <div style={{ color: "#334155", lineHeight: 1.9, fontSize: 16 }}>
-                    <div>
-                      <strong>Hotel total:</strong> {formatCurrency(estimatedHotelTotal)}
-                    </div>
-                    <div>
-                      <strong>Food + local transport:</strong> {formatCurrency(estimatedTripExtras)}
-                    </div>
-                    <div>
-                      <strong>Estimated subtotal:</strong> {formatCurrency(estimatedTotal)}
-                    </div>
-                    <div style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
-                      Flight costs not yet included in this MVP.
-                    </div>
-                  </div>
+                <div>
+                  <strong>Airport:</strong> {destination.airport}
+                </div>
+                <div>
+                  <strong>Recommended stay areas:</strong>{" "}
+                  {destination.hotelAreas.map((area) => area.name).join(", ")}
+                </div>
+                <div>
+                  <strong>Travel style:</strong> {pace} / {budgetLevel}
+                </div>
+                <div>
+                  <strong>Suggested food focus:</strong> {destination.food.join(", ")}
                 </div>
               </div>
+            </div>
 
-              <div
-                style={{
-                  marginTop: 20,
-                  background: "#ffffff",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 22,
-                  padding: 22,
-                }}
-              >
-                <h2 style={sectionTitle}>Day-by-Day Itinerary</h2>
-<button
-  onClick={() => {
-    const text = tripData.plan
-      .map((d) => {
-        return `Day ${d.day} - ${d.title}
-Morning: ${d.morning}
-Afternoon: ${d.afternoon}
-Evening: ${d.evening}
-
-`;
-      })
-      .join("\n");
-
-    navigator.clipboard.writeText(text);
-    alert("Itinerary copied!");
-  }}
-  style={{
-    marginBottom: 12,
-    padding: "10px 14px",
-    borderRadius: 10,
-    border: "none",
-    background: "#1d4ed8",
-    color: "white",
-    fontWeight: 600,
-    cursor: "pointer",
-  }}
->
-  📋 Copy Itinerary
-</button>
-                <div style={{ display: "grid", gap: 14 }}>
-                  {tripData.plan.map((item) => (
-                    <div
-                      key={item.day}
-                      style={{
-                        border: "1px solid #e5e7eb",
-                        borderRadius: 18,
-                        padding: 18,
-                        background: "#fbfdff",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          alignItems: "center",
-                          marginBottom: 10,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <div>
-                          <div
-                            style={{
-                              fontSize: 20,
-                              fontWeight: 700,
-                              color: "#0f172a",
-                            }}
-                          >
-                            Day {item.day} — {item.title}
-                          </div>
-                          <div style={{ color: "#64748b", fontSize: 14, marginTop: 4 }}>
-                            {item.dateLabel}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            background: "#e8f0ff",
-                            color: "#1d4ed8",
-                            fontSize: 12,
-                            fontWeight: 700,
-                            padding: "8px 12px",
-                            borderRadius: 999,
-                          }}
-                        >
-                          {destination.label}
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                          gap: 12,
-                        }}
-                      >
-                        <div style={timeCardStyle}>
-                          <div style={timeLabelStyle}>Morning</div>
-                          <div style={timeTextStyle}>{item.morning}</div>
-                        </div>
-                        <div style={timeCardStyle}>
-                          <div style={timeLabelStyle}>Afternoon</div>
-                          <div style={timeTextStyle}>{item.afternoon}</div>
-                        </div>
-                        <div style={timeCardStyle}>
-                          <div style={timeLabelStyle}>Evening</div>
-                          <div style={timeTextStyle}>{item.evening}</div>
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          marginTop: 12,
-                          background: "#fff7ed",
-                          border: "1px solid #fed7aa",
-                          color: "#9a3412",
-                          borderRadius: 14,
-                          padding: 12,
-                          fontSize: 14,
-                        }}
-                      >
-                        <strong>Planning note:</strong> {item.note}
-                      </div>
-                    </div>
-                  ))}
+            <div
+              style={{
+                background: "#f8fafc",
+                border: "1px solid #e5e7eb",
+                borderRadius: 22,
+                padding: 22,
+              }}
+            >
+              <h2 style={sectionTitle}>Estimated Budget</h2>
+              <div style={{ color: "#334155", lineHeight: 1.9, fontSize: 16 }}>
+                <div>
+                  <strong>Hotel total:</strong> {formatCurrency(estimatedHotelTotal)}
+                </div>
+                <div>
+                  <strong>Food + local transport:</strong> {formatCurrency(estimatedTripExtras)}
+                </div>
+                <div>
+                  <strong>Estimated subtotal:</strong> {formatCurrency(estimatedTotal)}
+                </div>
+                <div style={{ fontSize: 13, color: "#64748b", marginTop: 8 }}>
+                  Flight costs not yet included in this MVP.
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr 1fr",
-                  gap: 16,
-                  marginTop: 20,
-                }}
-              >
-                <div style={infoCardStyle}>
-                  <h3 style={smallCardTitle}>Best Hotel Areas</h3>
-                  {destination.hotelAreas.map((area) => (
-                    <div key={area.name} style={bulletLineStyle}>
-                      • <strong>{area.name}</strong> — {area.reason}
-                    </div>
-                  ))}
-                </div>
-
-                <div style={infoCardStyle}>
-                  <h3 style={smallCardTitle}>Transport Tips</h3>
-                  {destination.transportTips.map((tip, index) => (
-                    <div key={index} style={bulletLineStyle}>
-                      • {tip}
-                    </div>
-                  ))}
-                </div>
-
-                <div style={infoCardStyle}>
-                  <h3 style={smallCardTitle}>Book the Trip</h3>
-                  <a
-                    href={hotelSearchUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={bookingButtonStyle}
-                  >
-                    🏨 Search Hotels
-                  </a>
-                  <a
-                    href={flightSearchUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ ...bookingButtonStyle, background: "#0f172a", color: "#ffffff" }}
-                  >
-                    ✈️ Search Flights
-                  </a>
-                  <div style={{ color: "#64748b", fontSize: 13, marginTop: 10 }}>
-                    Replace these with your affiliate links later.
-                  </div>
-                </div>
-              </div>
-            </>
+          {loading && (
+            <div
+              style={{
+                marginTop: 20,
+                background: "#ffffff",
+                padding: 20,
+                borderRadius: 16,
+                border: "1px solid #e5e7eb",
+                fontWeight: "bold",
+                color: "#0f172a",
+              }}
+            >
+              Generating AI itinerary...
+            </div>
           )}
+
+          {generated && aiResult && (
+            <div
+              style={{
+                marginTop: 20,
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
+                borderRadius: 22,
+                padding: 22,
+              }}
+            >
+              <h2 style={sectionTitle}>AI Generated Itinerary</h2>
+
+              <button
+                onClick={copyAiItinerary}
+                style={{
+                  marginBottom: 16,
+                  padding: "10px 14px",
+                  borderRadius: 10,
+                  border: "none",
+                  background: "#1d4ed8",
+                  color: "white",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                📋 Copy Itinerary
+              </button>
+
+              <div
+                style={{
+                  whiteSpace: "pre-wrap",
+                  lineHeight: 1.8,
+                  color: "#334155",
+                  fontSize: 16,
+                }}
+              >
+                {aiResult}
+              </div>
+            </div>
+          )}
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 16,
+              marginTop: 20,
+            }}
+          >
+            <div style={infoCardStyle}>
+              <h3 style={smallCardTitle}>Best Hotel Areas</h3>
+              {destination.hotelAreas.map((area) => (
+                <div key={area.name} style={bulletLineStyle}>
+                  • <strong>{area.name}</strong> — {area.reason}
+                </div>
+              ))}
+            </div>
+
+            <div style={infoCardStyle}>
+              <h3 style={smallCardTitle}>Transport Tips</h3>
+              {destination.transportTips.map((tip, index) => (
+                <div key={index} style={bulletLineStyle}>
+                  • {tip}
+                </div>
+              ))}
+            </div>
+
+            <div style={infoCardStyle}>
+              <h3 style={smallCardTitle}>Book the Trip</h3>
+              <a
+                href={hotelSearchUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={bookingButtonStyle}
+              >
+                🏨 Search Hotels
+              </a>
+              <a
+                href={flightSearchUrl}
+                target="_blank"
+                rel="noreferrer"
+                style={{ ...bookingButtonStyle, background: "#0f172a", color: "#ffffff" }}
+              >
+                ✈️ Search Flights
+              </a>
+              <div style={{ color: "#64748b", fontSize: 13, marginTop: 10 }}>
+                Replace these with your affiliate links later.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -748,26 +547,6 @@ const sectionTitle = {
   marginBottom: 14,
   fontSize: 24,
   color: "#0f172a",
-};
-
-const timeCardStyle = {
-  background: "#ffffff",
-  border: "1px solid #e5e7eb",
-  borderRadius: 14,
-  padding: 14,
-};
-
-const timeLabelStyle = {
-  fontSize: 13,
-  fontWeight: 700,
-  color: "#1d4ed8",
-  marginBottom: 8,
-};
-
-const timeTextStyle = {
-  color: "#334155",
-  fontSize: 15,
-  lineHeight: 1.65,
 };
 
 const infoCardStyle = {
