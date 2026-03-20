@@ -1,47 +1,42 @@
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ message: "Method not allowed" });
-  }
+  try {
+    const { destination, arrival, departure, travelers, budget, pace } = req.body;
 
-  const { destination, arrival, departure, travelers, budget, pace } = req.body;
-
-  const prompt = `
+    const prompt = `
 Create a detailed travel itinerary.
 
 Destination: ${destination}
-Arrival: ${arrival}
-Departure: ${departure}
+Dates: ${arrival} to ${departure}
 Travelers: ${travelers}
 Budget: ${budget}
 Pace: ${pace}
 
 Format:
-Day 1:
-Morning:
-Afternoon:
-Evening:
-
-Be realistic, specific, and useful.
+- Day by day
+- Morning / Afternoon / Evening
+- Include food, transport tips, realistic flow
 `;
 
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const completion = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        messages: [{ role: "user", content: prompt }],
+        messages: [
+          { role: "user", content: prompt }
+        ],
       }),
     });
 
-    const data = await response.json();
+    const data = await completion.json();
 
-    const text = data.choices[0].message.content;
+    const result = data.choices?.[0]?.message?.content || "No response";
 
-    res.status(200).json({ result: text });
+    res.status(200).json({ result });
+
   } catch (error) {
     res.status(500).json({ error: "Failed to generate itinerary" });
   }
