@@ -537,7 +537,35 @@ export default function Home() {
                 }}
               >
                 <h2 style={sectionTitle}>Day-by-Day Itinerary</h2>
+<button
+  onClick={() => {
+    const text = tripData.plan
+      .map((d) => {
+        return `Day ${d.day} - ${d.title}
+Morning: ${d.morning}
+Afternoon: ${d.afternoon}
+Evening: ${d.evening}
 
+`;
+      })
+      .join("\n");
+
+    navigator.clipboard.writeText(text);
+    alert("Itinerary copied!");
+  }}
+  style={{
+    marginBottom: 12,
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "none",
+    background: "#1d4ed8",
+    color: "white",
+    fontWeight: 600,
+    cursor: "pointer",
+  }}
+>
+  📋 Copy Itinerary
+</button>
                 <div style={{ display: "grid", gap: 14 }}>
                   {tripData.plan.map((item) => (
                     <div
