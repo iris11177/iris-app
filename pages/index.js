@@ -121,47 +121,71 @@ export default function Home() {
     destination.country
   )}`;
 
-  const generatePlan = async () => {
-    if (!arrival || !departure) {
-      alert("Please select dates");
-      return;
+const generatePlan = async () => {
+  if (!arrival || !departure) {
+    alert("Please select dates");
+    return;
+  }
+
+  setLoading(true);
+  setGenerated(false);
+
+  try {
+    const res = await fetch("/api/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        destination: destination.label,
+        arrival,
+        departure,
+        travelers,
+        budget: budgetLevel,
+        pace,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error("AI failed");
     }
 
-    if (nights <= 0) {
-      alert("Departure date must be after arrival date.");
-      return;
-    }
+    // ✅ AI SUCCESS
+    setAiResult(data.result || "No itinerary returned.");
 
-    setLoading(true);
-    setGenerated(false);
-    setAiResult("");
+  } catch (err) {
+    console.warn("AI failed → using fallback");
 
-    try {
-      const res = await fetch("/api/generate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          destination: destination.label,
-          arrival,
-          departure,
-          travelers,
-          budget: budgetLevel,
-          pace,
-        }),
-      });
+    const fallback = buildTripPlan({
+      destinationKey,
+      arrival,
+      departure,
+      travelers: Number(travelers || 1),
+      budgetLevel,
+      pace,
+    });
 
-      const data = await res.json();
+    const text = fallback.plan
+      .map((d) => {
+        return `Day ${d.day} - ${d.title}
+Morning: ${d.morning}
+Afternoon: ${d.afternoon}
+Evening: ${d.evening}`;
+      })
+      .join("\n\n");
 
-      if (!res.ok) {
-        throw new Error(data?.error || "Failed to generate itinerary");
-      }
+    // ✅ FALLBACK OUTPUT
+    setAiResult(
+      "⚠️ AI unavailable (quota reached)\n\nHere’s your smart itinerary:\n\n" + text
+    );
+  }
 
-      setAiResult(data.result || "No itinerary returned.");
-      setGenerated(true);
-    } catch (err) {
-      alert("Failed to generate itinerary");
+  // ✅ ONLY HERE
+  setGenerated(true);
+  setLoading(false);
+};
     }
 
     setLoading(false);
