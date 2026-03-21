@@ -11,6 +11,18 @@ const DESTINATIONS = {
       { name: "Asakusa", reason: "traditional vibe, budget-friendly" },
       { name: "Shinjuku", reason: "nightlife, shopping, major transport hub" },
     ],
+    highlights: [
+      "Asakusa & Senso-ji",
+      "Ueno Park",
+      "Shibuya Crossing",
+      "Meiji Shrine",
+      "Shinjuku",
+      "Tokyo Skytree",
+      "Akihabara",
+      "Tsukiji area",
+      "Harajuku",
+      "Odaiba",
+    ],
     food: ["ramen", "sushi", "gyudon", "convenience store snacks"],
     transportTips: [
       "Use IC card for trains and convenience stores",
@@ -27,6 +39,18 @@ const DESTINATIONS = {
       { name: "Ximending", reason: "shopping, food, lively atmosphere" },
       { name: "Taipei Main Station", reason: "best transport access" },
       { name: "Zhongshan", reason: "cafes, shopping, stylish stay" },
+    ],
+    highlights: [
+      "Taipei 101",
+      "Ximending",
+      "Chiang Kai-shek Memorial Hall",
+      "Jiufen",
+      "Shifen",
+      "Yehliu",
+      "Raohe Night Market",
+      "Beitou",
+      "Longshan Temple",
+      "Elephant Mountain",
     ],
     food: ["beef noodles", "xiao long bao", "fried chicken", "night market snacks"],
     transportTips: [
@@ -45,6 +69,18 @@ const DESTINATIONS = {
       { name: "Haymarket", reason: "good value, near food and Central" },
       { name: "Surry Hills", reason: "cafes, local vibe, still accessible" },
     ],
+    highlights: [
+      "Circular Quay",
+      "Sydney Opera House",
+      "The Rocks",
+      "Darling Harbour",
+      "Bondi Beach",
+      "Taronga Zoo",
+      "Blue Mountains",
+      "Queen Victoria Building",
+      "Hyde Park",
+      "Manly",
+    ],
     food: ["fish and chips", "brunch", "meat pie", "Asian food in Haymarket"],
     transportTips: [
       "Use Opal for trains, ferries, and buses",
@@ -61,6 +97,18 @@ const DESTINATIONS = {
       { name: "Old Quarter", reason: "best for first-timers and food" },
       { name: "Hoan Kiem", reason: "central and scenic" },
       { name: "French Quarter", reason: "cleaner, quieter, upscale feel" },
+    ],
+    highlights: [
+      "Hoan Kiem Lake",
+      "Old Quarter",
+      "Train Street",
+      "Temple of Literature",
+      "Hoa Lo Prison",
+      "Ninh Binh",
+      "Ha Long Bay",
+      "St. Joseph Cathedral",
+      "Dong Xuan Market",
+      "West Lake",
     ],
     food: ["pho", "bun cha", "egg coffee", "banh mi"],
     transportTips: [
@@ -87,6 +135,88 @@ function nightsBetween(arrival, departure) {
   return diff > 0 ? diff : 0;
 }
 
+function getDatesBetween(arrival, departure) {
+  const dates = [];
+  const start = new Date(arrival);
+  const end = new Date(departure);
+
+  if (isNaN(start) || isNaN(end)) return dates;
+
+  let current = new Date(start);
+  while (current < end) {
+    dates.push(new Date(current));
+    current.setDate(current.getDate() + 1);
+  }
+  return dates;
+}
+
+function buildTripPlan({ destinationKey, arrival, departure, pace }) {
+  const destination = DESTINATIONS[destinationKey];
+  const tripDates = getDatesBetween(arrival, departure);
+  const days = tripDates.length;
+
+  if (!destination || days <= 0) {
+    return { plan: [] };
+  }
+
+  const highlights = destination.highlights;
+
+  const hotelArea =
+    pace === "relaxed"
+      ? destination.hotelAreas[0]
+      : pace === "balanced"
+      ? destination.hotelAreas[1] || destination.hotelAreas[0]
+      : destination.hotelAreas[2] || destination.hotelAreas[0];
+
+  const plan = [];
+
+  for (let i = 0; i < days; i++) {
+    const dayNumber = i + 1;
+    const isArrivalDay = i === 0;
+    const isDepartureDay = i === days - 1;
+
+    if (isArrivalDay) {
+      plan.push({
+        day: dayNumber,
+        title: "Arrival + Easy Start",
+        morning: `Arrival at ${destination.airport}. Immigration, baggage claim, airport transfer, and check-in near ${hotelArea.name}.`,
+        afternoon: `Light exploration around ${hotelArea.name}. Start with ${highlights[0]} if energy allows.`,
+        evening: `Simple dinner and early rest. Try local ${destination.food[0]} or ${destination.food[1]}.`,
+      });
+      continue;
+    }
+
+    if (isDepartureDay) {
+      plan.push({
+        day: dayNumber,
+        title: "Departure Day",
+        morning: `Breakfast, final packing, and last short walk near ${hotelArea.name}.`,
+        afternoon: `Check out and airport transfer.`,
+        evening: `Departure flight.`,
+      });
+      continue;
+    }
+
+    const morningSpot = highlights[(i * 2 - 1) % highlights.length];
+    const afternoonSpot = highlights[(i * 2) % highlights.length];
+    const eveningFood = destination.food[i % destination.food.length];
+
+    let title = "City Exploration Day";
+    if (pace === "fast") title = "Packed Sightseeing Day";
+    if (pace === "relaxed") title = "Relaxed Exploration Day";
+
+    plan.push({
+      day: dayNumber,
+      title,
+      morning: `Visit ${morningSpot}. Best to start early and avoid crowds.`,
+      afternoon: `Continue to ${afternoonSpot}. Add nearby shopping, cafes, or photo stops.`,
+      evening: `Dinner focus: try ${eveningFood}. Return to ${hotelArea.name} or enjoy a nearby night area.`,
+    });
+  }
+
+  return { plan };
+}
+
 export default function Home() {
   const [destinationKey, setDestinationKey] = useState("tokyo");
   const [arrival, setArrival] = useState("");
@@ -111,7 +241,8 @@ export default function Home() {
   const estimatedHotelTotal = nights * estimatedHotelPerNight;
   const estimatedDailyFoodTransport =
     budgetLevel === "budget" ? 1200 : budgetLevel === "premium" ? 2800 : 1800;
-  const estimatedTripExtras = nights * estimatedDailyFoodTransport * Number(travelers || 1);
+  const estimatedTripExtras =
+    nights * estimatedDailyFoodTransport * Number(travelers || 1);
   const estimatedTotal = estimatedHotelTotal + estimatedTripExtras;
 
   const hotelSearchUrl = `https://www.agoda.com/search?textToSearch=${encodeURIComponent(
@@ -121,69 +252,68 @@ export default function Home() {
     destination.country
   )}`;
 
-const generatePlan = async () => {
-  if (!arrival || !departure) {
-    alert("Please select dates");
-    return;
-  }
-
-  setLoading(true);
-  setGenerated(false);
-  setAiResult("");
-
-  try {
-    const res = await fetch("/api/generate", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        destination: destination.label,
-        arrival,
-        departure,
-        travelers,
-        budget: budgetLevel,
-        pace,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error("AI failed");
+  const generatePlan = async () => {
+    if (!arrival || !departure) {
+      alert("Please select dates");
+      return;
     }
 
-    setAiResult(data.result || "No itinerary returned.");
-  } catch (err) {
-    console.warn("AI failed → using fallback");
+    if (nights <= 0) {
+      alert("Departure date must be after arrival date.");
+      return;
+    }
 
-    const fallback = buildTripPlan({
-      destinationKey,
-      arrival,
-      departure,
-      travelers: Number(travelers || 1),
-      budgetLevel,
-      pace,
-    });
+    setLoading(true);
+    setGenerated(false);
+    setAiResult("");
 
-    const text = fallback.plan
-      .map((d) => {
-        return `Day ${d.day} - ${d.title}
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          destination: destination.label,
+          arrival,
+          departure,
+          travelers,
+          budget: budgetLevel,
+          pace,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error("AI failed");
+      }
+
+      setAiResult(data.result || "No itinerary returned.");
+    } catch (err) {
+      const fallback = buildTripPlan({
+        destinationKey,
+        arrival,
+        departure,
+        pace,
+      });
+
+      const text = fallback.plan
+        .map((d) => {
+          return `Day ${d.day} - ${d.title}
 Morning: ${d.morning}
 Afternoon: ${d.afternoon}
 Evening: ${d.evening}`;
-      })
-      .join("\n\n");
+        })
+        .join("\n\n");
 
-    setAiResult(
-      "⚠️ AI unavailable (quota reached)\n\nHere’s your smart itinerary:\n\n" + text
-    );
-  }
-
-  setGenerated(true);
-  setLoading(false);
-};
+      setAiResult(
+        "⚠️ AI unavailable (quota reached)\n\nHere’s your smart itinerary:\n\n" + text
+      );
     }
+
+    setGenerated(true);
+    setLoading(false);
   };
 
   const copyAiItinerary = async () => {
@@ -312,7 +442,11 @@ Evening: ${d.evening}`;
 
             <div>
               <label style={labelStyle}>Trip Pace</label>
-              <select value={pace} onChange={(e) => setPace(e.target.value)} style={inputStyle}>
+              <select
+                value={pace}
+                onChange={(e) => setPace(e.target.value)}
+                style={inputStyle}
+              >
                 <option value="relaxed">Relaxed</option>
                 <option value="balanced">Balanced</option>
                 <option value="fast">Fast-paced</option>
@@ -387,7 +521,8 @@ Evening: ${d.evening}`;
                   <strong>Travel style:</strong> {pace} / {budgetLevel}
                 </div>
                 <div>
-                  <strong>Suggested food focus:</strong> {destination.food.join(", ")}
+                  <strong>Suggested food focus:</strong>{" "}
+                  {destination.food.join(", ")}
                 </div>
               </div>
             </div>
@@ -515,7 +650,11 @@ Evening: ${d.evening}`;
                 href={flightSearchUrl}
                 target="_blank"
                 rel="noreferrer"
-                style={{ ...bookingButtonStyle, background: "#0f172a", color: "#ffffff" }}
+                style={{
+                  ...bookingButtonStyle,
+                  background: "#0f172a",
+                  color: "#ffffff",
+                }}
               >
                 ✈️ Search Flights
               </a>
