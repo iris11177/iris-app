@@ -129,6 +129,7 @@ const generatePlan = async () => {
 
   setLoading(true);
   setGenerated(false);
+  setAiResult("");
 
   try {
     const res = await fetch("/api/generate", {
@@ -152,9 +153,7 @@ const generatePlan = async () => {
       throw new Error("AI failed");
     }
 
-    // ✅ AI SUCCESS
     setAiResult(data.result || "No itinerary returned.");
-
   } catch (err) {
     console.warn("AI failed → using fallback");
 
@@ -176,19 +175,15 @@ Evening: ${d.evening}`;
       })
       .join("\n\n");
 
-    // ✅ FALLBACK OUTPUT
     setAiResult(
       "⚠️ AI unavailable (quota reached)\n\nHere’s your smart itinerary:\n\n" + text
     );
   }
 
-  // ✅ ONLY HERE
   setGenerated(true);
   setLoading(false);
 };
     }
-
-    setLoading(false);
   };
 
   const copyAiItinerary = async () => {
